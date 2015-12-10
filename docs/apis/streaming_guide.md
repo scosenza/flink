@@ -50,6 +50,13 @@ words coming from a web socket in 5 second windows. You can copy &amp; paste the
 <div data-lang="java" markdown="1">
 
 {% highlight java %}
+import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
+
 public class WindowWordCount {
 
     public static void main(String[] args) throws Exception {
@@ -84,6 +91,10 @@ public class WindowWordCount {
 
 <div data-lang="scala" markdown="1">
 {% highlight scala %}
+import java.util.concurrent.TimeUnit
+
+import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.windowing.time.Time
 
 object WindowWordCount {
   def main(args: Array[String]) {
@@ -567,7 +578,7 @@ keyedStream.maxBy("key");
             key according to some characteristic (e.g., the data that arrived within the last 5 seconds).
             See <a href="#windows">windows</a> for a complete description of windows.
     {% highlight java %}
-dataStream.keyBy(0).window(TumblingTimeWindows.of(5, TimeUnit.SECONDS)); // Last 5 seconds of data
+dataStream.keyBy(0).window(TumblingTimeWindows.of(Time.of(5, TimeUnit.SECONDS))); // Last 5 seconds of data
     {% endhighlight %}
         </p>
           </td>
@@ -930,7 +941,7 @@ keyedStream.maxBy("key")
             key according to some characteristic (e.g., the data that arrived within the last 5 seconds).
             See <a href="#windows">windows</a> for a description of windows.
     {% highlight scala %}
-dataStream.keyBy(0).window(TumblingTimeWindows.of(5, TimeUnit.SECONDS)) // Last 5 seconds of data // Last 5 seconds of data
+dataStream.keyBy(0).window(TumblingTimeWindows.of(Time.of(5, TimeUnit.SECONDS))) // Last 5 seconds of data
     {% endhighlight %}
         </p>
           </td>

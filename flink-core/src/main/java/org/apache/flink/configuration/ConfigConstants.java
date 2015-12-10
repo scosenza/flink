@@ -86,6 +86,8 @@ public final class ConfigConstants {
 	 * The port can either be a port, such as "9123",
 	 * a range of ports: "50100-50200"
 	 * or a list of ranges and or points: "50100-50200,50300-50400,51234"
+	 *
+	 * Setting the port to 0 will let the OS choose an available port.
 	 */
 	public static final String BLOB_SERVER_PORT = "blob.server.port";
 
@@ -130,6 +132,12 @@ public final class ConfigConstants {
 	 * The config parameter defining the memory allocation method (JVM heap or off-heap).
 	*/
 	public static final String TASK_MANAGER_MEMORY_OFF_HEAP_KEY = "taskmanager.memory.off-heap";
+
+	/**
+	 * The config parameter for specifying whether TaskManager managed memory should be preallocated
+	 * when the TaskManager is starting. (default is false)
+	 */
+	public static final String TASK_MANAGER_MEMORY_PRE_ALLOCATE_KEY = "taskmanager.memory.preallocate";
 
 	/**
 	 * The config parameter defining the number of buffers used in the network stack. This defines the
@@ -242,6 +250,34 @@ public final class ConfigConstants {
 	 * for environments sharing a Flink installation between users)
 	 */
 	public static final String YARN_PROPERTIES_FILE_LOCATION = "yarn.properties-file.location";
+
+	/**
+	 * Prefix for passing custom environment variables to Flink's ApplicationMaster (JobManager).
+	 * For example for passing LD_LIBRARY_PATH as an env variable to the AppMaster, set:
+	 * 	yarn.application-master.env.LD_LIBRARY_PATH: "/usr/lib/native"
+	 * in the flink-conf.yaml.
+	 */
+	public static final String YARN_APPLICATION_MASTER_ENV_PREFIX = "yarn.application-master.env.";
+
+	/**
+	 * Similar to the {@see YARN_APPLICATION_MASTER_ENV_PREFIX}, this configuration prefix allows
+	 * setting custom environment variables.
+	 */
+	public static final String YARN_TASK_MANAGER_ENV_PREFIX = "yarn.taskmanager.env.";
+
+
+
+	 /**
+	 * The config parameter defining the Akka actor system port for the ApplicationMaster and
+	 * JobManager
+	 *
+	 * The port can either be a port, such as "9123",
+	 * a range of ports: "50100-50200"
+	 * or a list of ranges and or points: "50100-50200,50300-50400,51234"
+	 *
+	 * Setting the port to 0 will let the OS choose an available port.
+	 */
+	public static final String YARN_APPLICATION_MASTER_PORT = "yarn.application-master.port";
 
 
 	// ------------------------ Hadoop Configuration ------------------------
@@ -568,6 +604,11 @@ public final class ConfigConstants {
 	 */
 	public static final String DEFAULT_TASK_MANAGER_MAX_REGISTRATION_DURATION = "Inf";
 
+	/**
+	 * The default setting for TaskManager memory eager allocation of managed memory
+	 */
+	public static final boolean DEFAULT_TASK_MANAGER_MEMORY_PRE_ALLOCATE = false;
+
 	// ------------------------ Runtime Algorithms ------------------------
 	
 	/**
@@ -603,6 +644,12 @@ public final class ConfigConstants {
 	 * Relative amount of memory to subtract from the requested memory.
 	 */
 	public static final float DEFAULT_YARN_HEAP_CUTOFF_RATIO = 0.25f;
+
+	/**
+	 * Default port for the application master is 0, which means
+	 * the operating system assigns an ephemeral port
+	 */
+	public static final String DEFAULT_YARN_APPLICATION_MASTER_PORT = "0";
 	
 	
 	// ------------------------ File System Behavior ------------------------
@@ -678,7 +725,7 @@ public final class ConfigConstants {
 	 * The default path to the file containing the list of access privileged users and passwords.
 	 */
 	public static final String DEFAULT_WEB_ACCESS_FILE_PATH = null;
-	
+
 	// ------------------------------ Akka Values ------------------------------
 
 	public static String DEFAULT_AKKA_TRANSPORT_HEARTBEAT_INTERVAL = "1000 s";

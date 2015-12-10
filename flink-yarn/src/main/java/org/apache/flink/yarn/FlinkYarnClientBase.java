@@ -145,7 +145,6 @@ public abstract class FlinkYarnClientBase extends AbstractFlinkYarnClient {
 	private org.apache.flink.configuration.Configuration flinkConfiguration;
 
 	private boolean detached;
-	private boolean streamingMode;
 
 	private String customName = null;
 
@@ -587,8 +586,11 @@ public abstract class FlinkYarnClientBase extends AbstractFlinkYarnClient {
 
 		// Setup CLASSPATH for ApplicationMaster
 		Map<String, String> appMasterEnv = new HashMap<String, String>();
+		// set user specified app master environment variables
+		appMasterEnv.putAll(Utils.getEnvironmentVariables(ConfigConstants.YARN_APPLICATION_MASTER_ENV_PREFIX, flinkConfiguration));
+		// set classpath from YARN configuration
 		Utils.setupEnv(conf, appMasterEnv);
-		// set configuration values
+		// set Flink on YARN internal configuration values
 		appMasterEnv.put(FlinkYarnClient.ENV_TM_COUNT, String.valueOf(taskManagerCount));
 		appMasterEnv.put(FlinkYarnClient.ENV_TM_MEMORY, String.valueOf(taskManagerMemoryMb));
 		appMasterEnv.put(FlinkYarnClient.FLINK_JAR_PATH, remotePathJar.toString() );
@@ -598,7 +600,6 @@ public abstract class FlinkYarnClientBase extends AbstractFlinkYarnClient {
 		appMasterEnv.put(FlinkYarnClient.ENV_CLIENT_USERNAME, UserGroupInformation.getCurrentUser().getShortUserName());
 		appMasterEnv.put(FlinkYarnClient.ENV_SLOTS, String.valueOf(slots));
 		appMasterEnv.put(FlinkYarnClient.ENV_DETACHED, String.valueOf(detached));
-		appMasterEnv.put(FlinkYarnClient.ENV_STREAMING_MODE, String.valueOf(streamingMode));
 
 		if(dynamicPropertiesEncoded != null) {
 			appMasterEnv.put(FlinkYarnClient.ENV_DYNAMIC_PROPERTIES, dynamicPropertiesEncoded);
@@ -771,11 +772,6 @@ public abstract class FlinkYarnClientBase extends AbstractFlinkYarnClient {
 
 	public String getSessionFilesDir() {
 		return sessionFilesDir.toString();
-	}
-
-	@Override
-	public void setStreamingMode(boolean streamingMode) {
-		this.streamingMode = streamingMode;
 	}
 
 	@Override

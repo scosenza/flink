@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.flink.runtime.operators.util;
 
 import java.io.DataInputStream;
@@ -24,8 +23,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-
-import junit.framework.TestCase;
 
 import org.apache.flink.api.common.typeutils.base.IntComparator;
 import org.junit.Assert;
@@ -49,16 +46,19 @@ import org.apache.flink.types.KeyFieldOutOfBoundsException;
 import org.apache.flink.types.NullKeyFieldException;
 import org.apache.flink.types.Record;
 import org.apache.flink.types.StringValue;
+
 import org.junit.Test;
 
-public class OutputEmitterTest extends TestCase {
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class OutputEmitterTest {
 	
-//	private static final long SEED = 485213591485399L;
 	
 	@Test
 	public void testPartitionHash() {
 		// Test for IntValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> intComp = new RecordComparatorFactory(new int[] {0}, new Class[] {IntValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_HASH, intComp);
 		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
@@ -74,20 +74,20 @@ public class OutputEmitterTest extends TestCase {
 			delegate.setInstance(rec);
 			
 			int[] chans = oe1.selectChannels(delegate, hit.length);
-			for(int j=0; j < chans.length; j++) {
-				hit[chans[j]]++;
+			for (int chan : chans) {
+				hit[chan]++;
 			}
 		}
 
 		int cnt = 0;
-		for (int i = 0; i < hit.length; i++) {
-			assertTrue(hit[i] > 0);
-			cnt += hit[i];
+		for (int aHit : hit) {
+			assertTrue(aHit > 0);
+			cnt += aHit;
 		}
 		assertTrue(cnt == numRecs);
 
 		// Test for StringValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> stringComp = new RecordComparatorFactory(new int[] {0}, new Class[] {StringValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe2 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_HASH, stringComp);
 
@@ -102,15 +102,15 @@ public class OutputEmitterTest extends TestCase {
 			delegate.setInstance(rec);
 				
 			int[] chans = oe2.selectChannels(delegate, hit.length);
-			for(int j=0; j < chans.length; j++) {
-				hit[chans[j]]++;
+			for (int chan : chans) {
+				hit[chan]++;
 			}
 		}
 
 		cnt = 0;
-		for (int i = 0; i < hit.length; i++) {
-			assertTrue(hit[i] > 0);
-			cnt += hit[i];
+		for (int aHit : hit) {
+			assertTrue(aHit > 0);
+			cnt += aHit;
 		}
 		assertTrue(cnt == numRecs);
 		
@@ -151,72 +151,137 @@ public class OutputEmitterTest extends TestCase {
 		assertTrue(chans.length == 1);
 		assertTrue(chans[0] >= 0 && chans[0] <= numChans-1);
 	}
-	
+
 	@Test
 	public void testForward() {
 		// Test for IntValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> intComp = new RecordComparatorFactory(new int[] {0}, new Class[] {IntValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.FORWARD, intComp);
 		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
-		
+
 		int numChannels = 100;
-		int numRecords = 50000;
-		
+		int numRecords = 50000 + numChannels / 2;
+
 		int[] hit = new int[numChannels];
 
 		for (int i = 0; i < numRecords; i++) {
 			IntValue k = new IntValue(i);
 			Record rec = new Record(k);
 			delegate.setInstance(rec);
-			
+
 			int[] chans = oe1.selectChannels(delegate, hit.length);
-			for(int j=0; j < chans.length; j++) {
-				hit[chans[j]]++;
+			for (int chan : chans) {
+				hit[chan]++;
 			}
 		}
 
-		int cnt = 0;
-		for (int i = 0; i < hit.length; i++) {
-			assertTrue(hit[i] == (numRecords/numChannels) || hit[i] == (numRecords/numChannels)-1);
-			cnt += hit[i];
+		assertTrue(hit[0] == numRecords);
+		for (int i = 1; i < hit.length; i++) {
+			assertTrue(hit[i] == 0);
 		}
-		assertTrue(cnt == numRecords);
 
 		// Test for StringValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> stringComp = new RecordComparatorFactory(new int[] {0}, new Class[] {StringValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe2 = new OutputEmitter<Record>(ShipStrategyType.FORWARD, stringComp);
 
 		numChannels = 100;
-		numRecords = 10000;
-		
+		numRecords = 10000 + numChannels / 2;
+
 		hit = new int[numChannels];
 
 		for (int i = 0; i < numRecords; i++) {
 			StringValue k = new StringValue(i + "");
 			Record rec = new Record(k);
 			delegate.setInstance(rec);
-				
+
 			int[] chans = oe2.selectChannels(delegate, hit.length);
-			for(int j=0; j < chans.length; j++) {
-				hit[chans[j]]++;
+			for (int chan : chans) {
+				hit[chan]++;
+			}
+		}
+
+		assertTrue(hit[0] == numRecords);
+		for (int i = 1; i < hit.length; i++) {
+			assertTrue(hit[i] == 0);
+		}
+	}
+
+	@Test
+	public void testForcedRebalance() {
+		// Test for IntValue
+		int numChannels = 100;
+		int toTaskIndex = numChannels * 6/7;
+		int fromTaskIndex = toTaskIndex + numChannels;
+		int extraRecords = numChannels / 3;
+		int numRecords = 50000 + extraRecords;
+
+		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_FORCED_REBALANCE, fromTaskIndex);
+		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
+
+		int[] hit = new int[numChannels];
+
+		for (int i = 0; i < numRecords; i++) {
+			IntValue k = new IntValue(i);
+			Record rec = new Record(k);
+			delegate.setInstance(rec);
+
+			int[] chans = oe1.selectChannels(delegate, hit.length);
+			for (int chan : chans) {
+				hit[chan]++;
+			}
+		}
+
+		int cnt = 0;
+		for (int i = 0; i < hit.length; i++) {
+			if (toTaskIndex <= i || i < toTaskIndex+extraRecords-numChannels) {
+				assertTrue(hit[i] == (numRecords/numChannels)+1);
+			} else {
+				assertTrue(hit[i] == numRecords/numChannels);
+			}
+			cnt += hit[i];
+		}
+		assertTrue(cnt == numRecords);
+
+		// Test for StringValue
+		numChannels = 100;
+		toTaskIndex = numChannels / 5;
+		fromTaskIndex = toTaskIndex + 2 * numChannels;
+		extraRecords = numChannels * 2/9;
+		numRecords = 10000 + extraRecords;
+
+		final ChannelSelector<SerializationDelegate<Record>> oe2 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_FORCED_REBALANCE, fromTaskIndex);
+
+		hit = new int[numChannels];
+
+		for (int i = 0; i < numRecords; i++) {
+			StringValue k = new StringValue(i + "");
+			Record rec = new Record(k);
+			delegate.setInstance(rec);
+
+			int[] chans = oe2.selectChannels(delegate, hit.length);
+			for (int chan : chans) {
+				hit[chan]++;
 			}
 		}
 
 		cnt = 0;
 		for (int i = 0; i < hit.length; i++) {
-			assertTrue(hit[i] == (numRecords/numChannels) || hit[i] == (numRecords/numChannels)-1);
+			if (toTaskIndex <= i && i < toTaskIndex+extraRecords) {
+				assertTrue(hit[i] == (numRecords/numChannels)+1);
+			} else {
+				assertTrue(hit[i] == numRecords/numChannels);
+			}
 			cnt += hit[i];
 		}
 		assertTrue(cnt == numRecords);
-		
 	}
 	
 	@Test
 	public void testBroadcast() {
 		// Test for IntValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> intComp = new RecordComparatorFactory(new int[] {0}, new Class[] {IntValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.BROADCAST, intComp);
 		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
@@ -232,17 +297,17 @@ public class OutputEmitterTest extends TestCase {
 			delegate.setInstance(rec);
 			
 			int[] chans = oe1.selectChannels(delegate, hit.length);
-			for(int j=0; j < chans.length; j++) {
-				hit[chans[j]]++;
+			for (int chan : chans) {
+				hit[chan]++;
 			}
 		}
 
-		for (int i = 0; i < hit.length; i++) {
-			assertTrue(hit[i]+"", hit[i] == numRecords);
+		for (int aHit : hit) {
+			assertTrue(aHit + "", aHit == numRecords);
 		}
 		
 		// Test for StringValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> stringComp = new RecordComparatorFactory(new int[] {0}, new Class[] {StringValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe2 = new OutputEmitter<Record>(ShipStrategyType.BROADCAST, stringComp);
 
@@ -257,19 +322,19 @@ public class OutputEmitterTest extends TestCase {
 			delegate.setInstance(rec);
 				
 			int[] chans = oe2.selectChannels(delegate, hit.length);
-			for(int j=0; j < chans.length; j++) {
-				hit[chans[j]]++;
+			for (int chan : chans) {
+				hit[chan]++;
 			}
 		}
 
-		for (int i = 0; i < hit.length; i++) {
-			assertTrue(hit[i]+"", hit[i] == numRecords);
+		for (int aHit : hit) {
+			assertTrue(aHit + "", aHit == numRecords);
 		}
 	}
 	
 	@Test
 	public void testMultiKeys() {
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> multiComp = new RecordComparatorFactory(new int[] {0,1,3}, new Class[] {IntValue.class, StringValue.class, DoubleValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_HASH, multiComp);
 		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
@@ -287,15 +352,15 @@ public class OutputEmitterTest extends TestCase {
 			delegate.setInstance(rec);
 			
 			int[] chans = oe1.selectChannels(delegate, hit.length);
-			for(int j=0; j < chans.length; j++) {
-				hit[chans[j]]++;
+			for (int chan : chans) {
+				hit[chan]++;
 			}
 		}
 
 		int cnt = 0;
-		for (int i = 0; i < hit.length; i++) {
-			assertTrue(hit[i] > 0);
-			cnt += hit[i];
+		for (int aHit : hit) {
+			assertTrue(aHit > 0);
+			cnt += aHit;
 		}
 		assertTrue(cnt == numRecords);
 		
@@ -304,7 +369,7 @@ public class OutputEmitterTest extends TestCase {
 	@Test
 	public void testMissingKey() {
 		// Test for IntValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> intComp = new RecordComparatorFactory(new int[] {1}, new Class[] {IntValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_HASH, intComp);
 		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
@@ -325,7 +390,7 @@ public class OutputEmitterTest extends TestCase {
 	@Test
 	public void testNullKey() {
 		// Test for IntValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> intComp = new RecordComparatorFactory(new int[] {0}, new Class[] {IntValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_HASH, intComp);
 		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
@@ -347,7 +412,7 @@ public class OutputEmitterTest extends TestCase {
 	public void testWrongKeyClass() {
 		
 		// Test for IntValue
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked", "rawtypes"})
 		final TypeComparator<Record> doubleComp = new RecordComparatorFactory(new int[] {0}, new Class[] {DoubleValue.class}).createComparator();
 		final ChannelSelector<SerializationDelegate<Record>> oe1 = new OutputEmitter<Record>(ShipStrategyType.PARTITION_HASH, doubleComp);
 		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
@@ -452,53 +517,4 @@ public class OutputEmitterTest extends TestCase {
 			return comparators;
 		}
 	}
-	
-//	@Test
-//	public void testPartitionRange() {
-//		final Random rnd = new Random(SEED);
-//		
-//		final int DISTR_MIN = 0;
-//		final int DISTR_MAX = 1000000;
-//		final int DISTR_RANGE = DISTR_MAX - DISTR_MIN + 1;
-//		final int NUM_BUCKETS = 137;
-//		final float BUCKET_WIDTH = DISTR_RANGE / ((float) NUM_BUCKETS);
-//		
-//		final int NUM_ELEMENTS = 10000000;
-//		
-//		final DataDistribution distri = new UniformIntegerDistribution(DISTR_MIN, DISTR_MAX);
-//		
-//		@SuppressWarnings("unchecked")
-//		final TypeComparator<Record> intComp = new RecordComparatorFactory(new int[] {0}, new Class[] {IntValue.class}).createComparator();
-//		final ChannelSelector<SerializationDelegate<Record>> oe = new OutputEmitter<Record>(ShipStrategyType.PARTITION_RANGE, intComp, distri);
-//		final SerializationDelegate<Record> delegate = new SerializationDelegate<Record>(new RecordSerializerFactory().getSerializer());
-//		
-//		final IntValue integer = new IntValue();
-//		final Record rec = new Record();
-//		
-//		for (int i = 0; i < NUM_ELEMENTS; i++) {
-//			final int nextValue = rnd.nextInt(DISTR_RANGE) + DISTR_MIN;
-//			integer.setValue(nextValue);
-//			rec.setField(0, integer);
-//			delegate.setInstance(rec);
-//			
-//			final int[] channels = oe.selectChannels(delegate, NUM_BUCKETS);
-//			if (channels.length != 1) {
-//				Assert.fail("Resulting channels array has more than one channel.");
-//			}
-//			
-//			final int bucket = channels[0];
-//			final int shouldBeBucket = (int) ((nextValue - DISTR_MIN) / BUCKET_WIDTH);
-//			
-//			if (shouldBeBucket != bucket) {
-//				// we may have a rounding imprecision in the 'should be bucket' computation.
-//				final int lowerBoundaryForSelectedBucket = DISTR_MIN + (int) ((bucket    ) * BUCKET_WIDTH);
-//				final int upperBoundaryForSelectedBucket = DISTR_MIN + (int) ((bucket + 1) * BUCKET_WIDTH);
-//				if (nextValue <= lowerBoundaryForSelectedBucket || nextValue > upperBoundaryForSelectedBucket) {
-//					Assert.fail("Wrong bucket selected");
-//				}
-//			}
-//			
-//		}
-//	}
-	
 }
