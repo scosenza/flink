@@ -408,8 +408,8 @@ public class LegacyFetcher implements Fetcher {
 						}
 						if (partitionsToGetOffsetsFor.size() > 0) {
 							// safeguard against an infinite loop.
-							if(OffsetOutOfRangeCount++ > 0) {
-								throw new RuntimeException("Found invalid offsets more than once in partitions "+partitionsToGetOffsetsFor.toString()+" " +
+							if(OffsetOutOfRangeCount++ > 10) {
+								throw new RuntimeException("Found invalid offsets more than 10 times in partitions "+partitionsToGetOffsetsFor.toString()+" " +
 										"Exceptions: "+exception);
 							}
 							// get valid offsets for these partitions and try again.
@@ -422,6 +422,7 @@ public class LegacyFetcher implements Fetcher {
 							throw new IOException("Error while fetching from broker: " + exception);
 						}
 					}
+					OffsetOutOfRangeCount = 0;
 
 					int messagesInFetch = 0;
 					for (FetchPartition fp : partitions) {
